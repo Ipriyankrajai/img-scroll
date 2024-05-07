@@ -1,35 +1,59 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useMotionValueEvent, useScroll, useTransform } from "framer-motion";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const ref = useRef<HTMLCanvasElement>(null);
+
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["center end", "start start"],
+  });
+
+  const images = useMemo(() => {
+    const loadedImages: HTMLImageElement[] = [];
+
+    for (let i = 1; i <= 86; i++) {
+      const img = new Image();
+      img.src = `/src/assets/images/${i}.webp`;
+      loadedImages.push(img);
+    }
+
+    return loadedImages;
+  }, []);
+
+  const render = useCallback(
+    (index: number) => {
+      if (images[index - 1]) {
+        ref.current?.getContext("2d")?.drawImage(images[index - 1], 0, 0);
+      }
+    },
+    [images]
+  );
+
+  const currentIndex = useTransform(scrollYProgress, [0, 1], [1, 86]);
+
+  useMotionValueEvent(currentIndex, "change", (latest) => {
+    render(Number(latest.toFixed()));
+  });
+
+  useEffect(() => {
+    render(1);
+  }, [render]);
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div
+      style={{
+        height: "6000px",
+        backgroundColor: "black",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <div style={{ height: "3000px" }} />
+      <canvas width={1000} height={1000} ref={ref} />
+    </div>
+  );
 }
 
-export default App
+export default App;
